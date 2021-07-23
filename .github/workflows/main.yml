@@ -1,0 +1,45 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ master ]
+    
+jobs:
+    run-msbuild-vstest:
+      runs-on: windows-latest
+      name: Run MSBuild and VSTest
+
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v2.1.0
+          id: checkout_code
+
+        - name: Setup MSBuild and add to PATH
+          uses: microsoft/setup-msbuild@v1.0.0
+          id: setup_msbuild
+
+        - name: Setup NuGet
+          uses: NuGet/setup-nuget@v1.0.2  
+
+        - name: Setup VSTest and add to PATH
+          uses: darenm/Setup-VSTest@v1
+          id: setup_vstest  
+
+        - name: Restore NuGet Packages
+          run: nuget restore HowToStartTestingWithNUnit.sln
+
+        - name: Run MSBuild
+          id: run_msbuild
+          working-directory: $
+          run: msbuild HowToStartTestingWithNUnit.sln /p:Configuration=Release /p:DeployOnBuild=true
+
+        - name: Run VSTest
+          id: run_vstest
+          working-directory: $\x64\Release\
+          run: vstest.console.exe /Platform:x64 .\*Tests.dll
+
+        - name: Upload Artifact
+          uses: actions/upload-artifact@v1.0.0
+          with:
+            name: published_webapp
+            path: bin\Release\Publish
